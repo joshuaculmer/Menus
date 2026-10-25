@@ -1,4 +1,4 @@
-/* Two-column layout after the Lunaview lunch menu. The left panel holds photos later. */
+/* Two-column layout after the Lunaview lunch menu. Photos fill the side panel. */
 
 :root {
   --sage: #849a7b;
@@ -21,36 +21,79 @@ body {
   print-color-adjust: exact;
 }
 
-/* Fixed elements repeat on every printed page. */
+.page {
+  width: 8.5in;
+  height: 11in;
+  display: grid;
+  grid-template-columns: var(--panel-width) 1fr;
+  grid-template-rows: 100%;
+  overflow: hidden;
+  break-after: page;
+}
+
+.page:last-of-type {
+  break-after: auto;
+}
 
 .panel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: var(--panel-width);
-  height: 11in;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 39fr 15fr 19fr 27fr;
+  grid-template-areas:
+    "one   one"
+    "two   three"
+    "four  four"
+    "base  base";
+  gap: 2px;
+  background: var(--cream);
+}
+
+/* The bottom block mirrors the PNG's solid sage footer. */
+
+.panel::after {
+  content: "";
+  grid-area: base;
   background: var(--sage);
 }
 
-.content {
-  margin-left: var(--panel-width);
+.slot {
+  background: var(--sage);
+  overflow: hidden;
+}
+
+.slot-1 { grid-area: one; }
+.slot-2 { grid-area: two; }
+.slot-3 { grid-area: three; }
+.slot-4 { grid-area: four; }
+
+.slot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.flow {
+  overflow: hidden;
   padding: 0.6in 0.6in 0.6in 0.5in;
   font-family: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
   color: var(--sage);
 }
 
-.mark {
+.menu-header {
+  text-align: center;
+  margin-bottom: 0.45in;
+}
+
+.menu-header::before {
+  content: "";
+  display: block;
   width: 0.32in;
   height: 0.32in;
   margin: 0.1in auto 0.2in;
   border: 0.06in solid var(--sage);
   outline: 0.03in solid var(--sage);
   outline-offset: 0.05in;
-}
-
-.menu-header {
-  text-align: center;
-  margin-bottom: 0.45in;
 }
 
 h1 {
@@ -77,12 +120,8 @@ h1 {
   color: var(--muted);
 }
 
-.category {
-  margin-bottom: 0.3in;
-}
-
 h2 {
-  margin: 0 0 0.14in;
+  margin: 0.3in 0 0.14in;
   font-family: Georgia, "Times New Roman", serif;
   font-weight: normal;
   font-size: 17pt;
@@ -91,9 +130,12 @@ h2 {
   color: var(--muted);
 }
 
+.flow > h2:first-child {
+  margin-top: 0;
+}
+
 .item {
   margin-bottom: 0.16in;
-  break-inside: avoid;
 }
 
 .item h3 {

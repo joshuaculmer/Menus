@@ -6,10 +6,10 @@
 //   node scripts/list-recipes.js banana    list recipes whose title contains "banana"
 
 const paths = require("./paths");
-const { findNewestBackup, loadRecipes } = require("./lib/recipes");
+const { findNewestBackup, loadBackup } = require("./lib/recipes");
 
 const filter = (process.argv[2] ?? "").toLowerCase();
-const recipes = [...loadRecipes(findNewestBackup(paths.RECIPES)).values()]
+const recipes = [...loadBackup(findNewestBackup(paths.RECIPES)).recipes.values()]
   .filter((r) => r.title.toLowerCase().includes(filter))
   .sort((a, b) => a.title.localeCompare(b.title));
 

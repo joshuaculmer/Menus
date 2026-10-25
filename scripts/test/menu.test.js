@@ -26,6 +26,31 @@ test("parses title, descriptions, categories, and items", () => {
   assert.deepStrictEqual(warnings, []);
 });
 
+test("reads photos from front matter, inline or as a list, with file line numbers", () => {
+  const { menu, warnings } = parseMenu([
+    "---",
+    "photos: [aaa, bbb]",
+    "photos:",
+    "  - ccc",
+    "color: red",
+    "---",
+    "# Title",
+  ].join("\n"));
+
+  assert.deepStrictEqual(menu.photos, [
+    { uuid: "aaa", line: 2 },
+    { uuid: "bbb", line: 2 },
+    { uuid: "ccc", line: 4 },
+  ]);
+  assert.strictEqual(menu.title, "Title");
+  assert.deepStrictEqual(warnings, ['line 5: ignored front matter "color: red"']);
+});
+
+test("warns on unclosed front matter", () => {
+  const { warnings } = parseMenu("---\nphotos: [a]\n# Title");
+  assert.strictEqual(warnings[0], 'line 1: front matter has no closing "---"');
+});
+
 test("warns on lines it cannot place", () => {
   const { warnings } = parseMenu([
     "# Title",

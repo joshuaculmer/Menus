@@ -11,10 +11,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { parseArgs } = require("node:util");
 const paths = require("./paths");
-const { findNewestBackup, loadRecipes } = require("./lib/recipes");
+const { findNewestBackup, loadBackup } = require("./lib/recipes");
 const { parseMenu } = require("./lib/menu");
-const { loadTemplate, renderMenu } = require("./lib/render");
-const { findBrowser, htmlToPdf } = require("./lib/pdf");
+const { resolveMenu } = require("./lib/resolve");
+const { loadTemplate, renderTemplate } = require("./lib/template");
+const { findBrowser, htmlToPdf, readPagination } = require("./lib/pdf");
 
 function rel(p) {
   return path.relative(paths.ROOT, p);
@@ -44,10 +45,12 @@ function main() {
   }
 
   const backup = findNewestBackup(paths.RECIPES);
-  const recipes = loadRecipes(backup);
+  const loadStarted = performance.now();
+  const loaded = loadBackup(backup);
+  const loadMs = Math.round(performance.now() - loadStarted);
   const template = loadTemplate(path.join(paths.TEMPLATES, values.template));
-  console.log(`recipes   ${rel(backup)} (${recipes.size})`);
-  console.log(`template  ${values.template}\n`);
+  console.log(`recipes   ${rel(backup)} (${loaded.recipes.size} recipes, ${loadMs}ms)`);
+  console.log(`template  ${template.name} (${template.photos} photo slot(s))\n`);
 
   fs.mkdirSync(paths.HTML_OUT, { recursive: true });
   fs.mkdirSync(paths.PDF_OUT, { recursive: true });
@@ -55,10 +58,12 @@ function main() {
   let errorCount = 0;
   for (const source of sources) {
     const name = path.basename(source, ".md");
+    const started = performance.now();
     try {
-      const { menu, warnings } = parseMenu(fs.readFileSync(source, "utf8"));
-      const { html, errors } = renderMenu(menu, recipes, template);
-      for (const w of warnings) console.warn(`  WARN   ${name}.md ${w}`);
+      const parsed = parseMenu(fs.readFileSync(source, "utf8"));
+      const { data, errors, warnings } = resolveMenu(parsed.menu, loaded, template.photos);
+      const html = renderTemplate(template, data);
+      for (const w of [...parsed.warnings, ...warnings]) console.warn(`  WARN   ${name}.md ${w}`);
       for (const e of errors) console.error(`  ERROR  ${name}.md ${e}`);
       errorCount += errors.length;
 
@@ -69,7 +74,18 @@ function main() {
       if (browser) {
         const pdfPath = path.join(paths.PDF_OUT, `${name}.pdf`);
         htmlToPdf(htmlPath, pdfPath, browser);
-        console.log(`  pdf    ${rel(pdfPath)}`);
+
+        let pageNote = "";
+        if (template.paged) {
+          const { pages, cut } = readPagination(htmlPath, browser);
+          pageNote = `, ${pages} page(s)`;
+          if (cut.length) {
+            errorCount++;
+            console.error(`  ERROR  ${name}.md text overflows page ${pages}; cut off: ${cut.join(", ")}`);
+          }
+        }
+        const seconds = ((performance.now() - started) / 1000).toFixed(2);
+        console.log(`  pdf    ${rel(pdfPath)} (${seconds}s${pageNote})`);
       }
     } catch (err) {
       errorCount++;

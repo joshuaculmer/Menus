@@ -1,4 +1,4 @@
-// Loads recipes from a RecetteTek backup (.rtk), which is a zip holding recipes_0.json.
+// Loads a RecetteTek backup (.rtk): a zip holding recipes_N.json files and recipe pictures.
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -20,8 +20,10 @@ function findNewestBackup(dir) {
   return path.join(dir, dated[0].name);
 }
 
-// Returns a Map of uuid -> recipe object.
-function loadRecipes(rtkPath) {
+// Returns { recipes, readPicture }.
+// recipes maps uuid -> recipe. readPicture(recipe) returns the bytes of the
+// recipe's first picture, or null when the backup does not include it.
+function loadBackup(rtkPath) {
   const buf = fs.readFileSync(rtkPath);
   const entries = zip.readEntries(buf);
 
@@ -31,7 +33,15 @@ function loadRecipes(rtkPath) {
     const list = JSON.parse(zip.extract(buf, entry).toString("utf8"));
     for (const recipe of list) recipes.set(recipe.uuid, recipe);
   }
-  return recipes;
+
+  // Recipes store the picture's path on the phone. The backup keeps only the file name.
+  function readPicture(recipe) {
+    const picture = recipe.pictures?.[0];
+    const entry = picture && entries.get(path.posix.basename(picture));
+    return entry ? zip.extract(buf, entry) : null;
+  }
+
+  return { recipes, readPicture };
 }
 
-module.exports = { findNewestBackup, loadRecipes };
+module.exports = { findNewestBackup, loadBackup };

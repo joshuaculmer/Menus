@@ -1,4 +1,4 @@
-// Prints HTML to PDF with an installed Chromium-family browser.
+// Drives an installed Chromium-family browser to print PDFs and read rendered pages.
 
 const fs = require("node:fs");
 const os = require("node:os");
@@ -16,30 +16,42 @@ const BROWSER_CANDIDATES = [
   "/usr/bin/chromium",
 ];
 
+const RESULT_RE = /<script type="application\/json" id="pagination-result">([^<]*)<\/script>/;
+
 function findBrowser() {
   return BROWSER_CANDIDATES.find((p) => fs.existsSync(p)) ?? null;
 }
 
-function htmlToPdf(htmlPath, pdfPath, browser) {
-  // Chrome will not share a running profile, so each print gets a throwaway one.
+// Runs headless with a throwaway profile, since Chrome will not share a running one.
+function runHeadless(browser, args, htmlPath) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "menus-chrome-"));
   try {
-    const result = spawnSync(browser, [
+    return spawnSync(browser, [
       "--headless=new",
       "--disable-gpu",
       "--no-sandbox",
       `--user-data-dir=${profile}`,
-      "--no-pdf-header-footer",
-      `--print-to-pdf=${path.resolve(pdfPath)}`,
+      ...args,
       pathToFileURL(path.resolve(htmlPath)).href,
-    ], { encoding: "utf8" });
-
-    if (!fs.existsSync(pdfPath)) {
-      throw new Error(`Browser did not produce ${pdfPath}\n${result.stderr ?? ""}`.trim());
-    }
+    ], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   } finally {
     fs.rmSync(profile, { recursive: true, force: true });
   }
 }
 
-module.exports = { findBrowser, htmlToPdf };
+function htmlToPdf(htmlPath, pdfPath, browser) {
+  const result = runHeadless(browser, ["--no-pdf-header-footer", `--print-to-pdf=${path.resolve(pdfPath)}`], htmlPath);
+  if (!fs.existsSync(pdfPath)) {
+    throw new Error(`Browser did not produce ${pdfPath}\n${result.stderr ?? ""}`.trim());
+  }
+}
+
+// Returns { pages, cut } from a paged template's pagination script.
+function readPagination(htmlPath, browser) {
+  const result = runHeadless(browser, ["--dump-dom"], htmlPath);
+  const match = result.stdout?.match(RESULT_RE);
+  if (!match) throw new Error(`Could not read pagination result for ${htmlPath}`);
+  return JSON.parse(match[1]);
+}
+
+module.exports = { findBrowser, htmlToPdf, readPagination };
