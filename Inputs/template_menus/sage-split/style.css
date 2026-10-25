@@ -1,0 +1,112 @@
+/* Two-column layout after the Lunaview lunch menu. The left panel holds photos later. */
+
+:root {
+  --sage: #849a7b;
+  --sage-dark: #6b8263;
+  --cream: #fbfde8;
+  --muted: #8e9a88;
+  --panel-width: 3.2in;
+}
+
+@page {
+  size: 8.5in 11in;
+  margin: 0;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--cream);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Fixed elements repeat on every printed page. */
+
+.panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--panel-width);
+  height: 11in;
+  background: var(--sage);
+}
+
+.content {
+  margin-left: var(--panel-width);
+  padding: 0.6in 0.6in 0.6in 0.5in;
+  font-family: "Segoe UI", "Trebuchet MS", Arial, sans-serif;
+  color: var(--sage);
+}
+
+.mark {
+  width: 0.32in;
+  height: 0.32in;
+  margin: 0.1in auto 0.2in;
+  border: 0.06in solid var(--sage);
+  outline: 0.03in solid var(--sage);
+  outline-offset: 0.05in;
+}
+
+.menu-header {
+  text-align: center;
+  margin-bottom: 0.45in;
+}
+
+h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: normal;
+  font-size: 40pt;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--sage);
+}
+
+.description {
+  margin: 0.12in 0 0;
+  font-size: 12pt;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--sage-dark);
+}
+
+.sub-description {
+  margin: 0.06in 0 0;
+  font-size: 11pt;
+  color: var(--muted);
+}
+
+.category {
+  margin-bottom: 0.3in;
+}
+
+h2 {
+  margin: 0 0 0.14in;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: normal;
+  font-size: 17pt;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.item {
+  margin-bottom: 0.16in;
+  break-inside: avoid;
+}
+
+.item h3 {
+  margin: 0;
+  font-size: 12.5pt;
+  font-weight: 700;
+  color: var(--sage);
+}
+
+.item p {
+  margin: 0.02in 0 0;
+  font-size: 9.5pt;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--muted);
+}
